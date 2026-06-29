@@ -295,12 +295,33 @@ Este projeto está licenciado sob a **MIT License** — veja o arquivo [LICENSE]
 
 ## 👤 Autor
 
+<div align="center">
+
 **Matheus Florindo de Deus**
-- 🎓 Aluno de Análise e Desenvolvimento de Sistemas — IFES
-- 🎓 Licenciado em Educação Física — UniVitória
-- 🔬 Pesquisador UFES (ORCID: 0009-0006-3848-0662)
-- 💻 Especialista em Cloud Computing, Big Data e Segurança da Informação
-- 📧 matheusdideusf@gmail.com
+
+🎓 Aluno de Análise e Desenvolvimento de Sistemas — IFES  
+🎓 Licenciado em Educação Física — UniVitória  
+🔬 Pesquisador UFES (ORCID: 0009-0006-3848-0662)  
+💻 Especialista em Cloud Computing, Big Data e Segurança da Informação  
+📧 matheusdideusf@gmail.com
+
+</div>
+
+---
+
+## 👤 Author
+
+<div align="center">
+
+**Matheus Florindo de Deus**
+
+🎓 Student of Systems Analysis and Development — IFES  
+🎓 Licensed in Physical Education — UniVitória  
+🔬 Researcher at UFES (ORCID: 0009-0006-3848-0662)  
+💻 Specialist in Cloud Computing, Big Data and Information Security  
+📧 matheusdideusf@gmail.com
+
+</div>
 
 ---
 
