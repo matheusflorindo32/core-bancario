@@ -132,7 +132,8 @@ export function GlobeGlobal({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     let globe: ReturnType<typeof createGlobe> | null = null;
     let animationId = 0;
@@ -140,24 +141,50 @@ export function GlobeGlobal({
     let phi = 0;
     let frame = 0;
 
+    let globeSize = 0;
+    const markerConfig = markers.map((m) => ({
+      location: m.location,
+      size: 0.08,
+      id: m.id,
+    }));
+
+    const getContainerSize = () => {
+      const rect = container.getBoundingClientRect();
+      return Math.floor(Math.min(rect.width, rect.height));
+    };
+
+    const updateCanvasSize = (size: number) => {
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      canvas.width = Math.floor(size * pixelRatio);
+      canvas.height = Math.floor(size * pixelRatio);
+      return pixelRatio;
+    };
+
     const initGlobe = () => {
-      const width = canvas.offsetWidth;
-      if (width === 0 || globe) return;
+      const size = getContainerSize();
+      if (size < 120 || globe) return;
+
+      globeSize = size;
+      const pixelRatio = updateCanvasSize(size);
 
       globe = createGlobe(canvas, {
-        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
-        width: width * 2,
-        height: width * 2,
+        devicePixelRatio: pixelRatio,
+        width: size,
+        height: size,
         phi: 0,
         theta: 0.3,
         dark: 1,
-        diffuse: 1.2,
+        diffuse: 1.6,
+        scale: 1.08,
         mapSamples: 16000,
-        mapBrightness: 6,
-        baseColor: [0.25, 0.35, 0.5],
+        mapBrightness: 11,
+        mapBaseBrightness: 0.08,
+        baseColor: [0.55, 0.72, 0.9],
         markerColor: [0.18, 0.85, 0.78],
-        glowColor: [0.12, 0.18, 0.32],
-        markers: markers.map((m) => ({ location: m.location, size: 0.06 })),
+        glowColor: [0.24, 0.6, 0.68],
+        markers: markerConfig,
         opacity: 1,
       });
 
@@ -166,6 +193,18 @@ export function GlobeGlobal({
         if (!isPausedRef.current) phi += speed;
         const curPhi = phi + phiOffsetRef.current + dragOffset.current.phi;
         const curTheta = 0.3 + thetaOffsetRef.current + dragOffset.current.theta;
+
+        const nextSize = getContainerSize();
+        if (nextSize >= 120 && Math.abs(nextSize - globeSize) > 2) {
+          globeSize = nextSize;
+          const nextPixelRatio = updateCanvasSize(nextSize);
+          globe.update({
+            width: nextSize,
+            height: nextSize,
+            devicePixelRatio: nextPixelRatio,
+          });
+        }
+
         globe.update({ phi: curPhi, theta: curTheta });
         // Update React state ~10x/s so overlay tracks rotation without re-rendering every frame
         if (frame++ % 6 === 0) setOrientation({ phi: curPhi, theta: curTheta });
@@ -175,15 +214,16 @@ export function GlobeGlobal({
       window.setTimeout(() => { canvas.style.opacity = "1"; }, 200);
     };
 
-    if (canvas.offsetWidth > 0) initGlobe();
+    if (getContainerSize() >= 120) initGlobe();
     else {
       resizeObserver = new ResizeObserver((entries) => {
-        if ((entries[0]?.contentRect.width ?? 0) > 0) {
+        const rect = entries[0]?.contentRect;
+        if (Math.min(rect?.width ?? 0, rect?.height ?? 0) >= 120) {
           resizeObserver?.disconnect();
           initGlobe();
         }
       });
-      resizeObserver.observe(canvas);
+      resizeObserver.observe(container);
     }
 
     return () => {
