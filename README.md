@@ -296,6 +296,7 @@ Este projeto está licenciado sob a **MIT License** — veja o arquivo [LICENSE]
 ## 👤 Autor
 
 **Matheus Florindo de Deus**
+- 🎓 Aluno de Análise e Desenvolvimento de Sistemas — IFES
 - 🎓 Bacharel em Educação Física (UniFatecie)
 - 🎓 Gestão Ambiental (UNIASSELVI)
 - 🔬 Pesquisador UFES (ORCID: 0009-0006-3848-0662)
