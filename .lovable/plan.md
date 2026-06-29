@@ -1,95 +1,35 @@
-# DIO Bank Pro — Landing Page Premium
+## Objetivo
 
-Landing page institucional para apresentar o **DIO Bank Pro**, um sistema bancário em TypeScript com Clean Architecture, SOLID e testes automatizados. Estética light premium "fintech editorial" com o globo interativo da `cobe` como peça-mestre do hero.
+Trocar o `GlobeGlobal` adaptado (light, navy/teal, com markers de camadas) pela versão **original do 21st.dev** (`shuding/cobe-globe-live`) — globo escuro com pulsos de rede animados — mantendo a landing **DIO Bank Pro** ao redor (nav, hero copy, princípios, bento, métricas, arquitetura, footer).
 
-## Stack e dependências
+## O que muda
 
-- TanStack Start + React 19 + TypeScript + Tailwind v4 (já no projeto).
-- Adicionar: `cobe` (engine do globo), `framer-motion` (microanimações no hero, métricas e features).
-- Fontes via `@fontsource`: **Instrument Serif** (display editorial) + **Inter** (UI/texto).
+### 1. Componente do globo
+- Substituir `src/components/globe-global.tsx` por uma versão fiel ao `GlobeLive` do 21st.dev:
+  - Esfera **escura** (`baseColor` navy profundo, `dark: 1`, `glowColor` sutil).
+  - **Markers de rede** em 8–10 cidades (NY, SP, Londres, Tóquio, Singapura, Sydney, Frankfurt, SF, Mumbai, São Paulo).
+  - **Pulsos animados** (rings concêntricos que expandem e desvanecem) sobre os markers a cada ~1.5–3s, simulando tráfego de rede.
+  - **HUD "live"**: contador de eventos/s e badge "● LIVE" pulsando — substitui o HUD atual "ops/s · simulação local".
+  - Rotação automática + drag para girar (igual hoje).
+  - Mantém o `ResizeObserver` boot para nunca renderizar com width 0.
 
-## Direção visual
+### 2. Hero
+- Trocar o fundo do lado direito do hero para um **"poço escuro"** (card navy `bg-foreground` ou um wrapper com `bg-[hsl(var(--navy))]`) para o globo escuro contrastar — o resto da landing continua light.
+- Caption sob o globo passa a refletir o componente original: "Rede global · 24 regiões · 99,99% uptime simulado".
 
-- Paleta Navy & Teal traduzida em tokens semânticos em `src/styles.css`:
-  - `--background` #fafbfc, `--foreground` #0c2340
-  - `--muted` #e8ecf1, `--muted-foreground` #4a5b78
-  - `--primary` #0c2340 (navy), `--accent` #2d8a9e (teal)
-  - `--border` rgba(12,35,64,0.08), `--ring` accent
-  - Gradiente assinatura: `linear-gradient(135deg, #0c2340, #2d8a9e)` usado em CTAs e detalhes do globo.
-- Tipografia: H1 em Instrument Serif (display, italic em palavras-chave), eyebrows em Inter mono-uppercase tracking alto, corpo em Inter.
-- Grid editorial assimétrico, hairlines de 1px (`--border`), bastante respiro, sem sombras pesadas — depth via gradientes sutis e blur.
+### 3. Limpeza
+- Remover a lógica de "markers = camadas Clean Arch" e o glow teal central — eram adaptações do globo light.
+- Manter intactos: nav, copy do hero, principles-strip, features-bento, metrics, architecture, footer.
 
-## Estrutura da página (`src/routes/index.tsx`)
+## Detalhes técnicos
 
-```text
-┌─ Nav fixa (logo "DIO Bank Pro" + links âncora + CTA "Ver no GitHub")
-├─ Hero split 55/45
-│   ├─ Esquerda: eyebrow "Open source · TypeScript", H1 editorial,
-│   │   sub, 2 CTAs (primário navy, secundário ghost), micro-stats
-│   └─ Direita: <GlobeGlobal /> (variante light do GlobeLive)
-├─ Faixa "Princípios" (4 itens em linha, hairlines): TypeScript ·
-│   Clean Architecture · SOLID · Tested
-├─ Seção Features (bento grid 3x2 com 6 cards)
-├─ Seção Métricas do projeto (4 KPIs com contador animado)
-├─ Seção "Arquitetura em camadas" (diagrama ASCII/SVG estilizado das
-│   camadas: Domain · Application · Infra · Presentation)
-└─ Footer minimal (links repo, licença, autoria)
-```
+- `cobe` e `framer-motion` já instalados — sem novas deps.
+- Pulsos implementados via overlay SVG/CSS posicionado por projeção 3D→2D simples (lat/long → x/y na esfera renderizada), com `framer-motion` animando `scale` + `opacity` em loop. Alternativa mais simples e fiel ao original: pulsos como `<div>` absolutos posicionados em coordenadas pré-calculadas dos markers visíveis na face frontal, com `animation-delay` escalonado.
+- Globo escuro precisa de um container com fundo escuro local — uso `<div className="rounded-3xl bg-[hsl(var(--navy))] p-8 ring-1 ring-[hsl(var(--navy))]/10 shadow-2xl">` envolvendo o canvas, sem mudar o tema global da página.
+- Tokens: continuo usando os tokens semânticos do projeto (`--navy`, `--teal`, `--bg-soft`) — sem hex hardcoded em componentes.
 
-### Conteúdo das seções
+## Fora de escopo
 
-**Hero**
-- Eyebrow: `DESAFIO DIO · OPEN SOURCE`
-- H1: *"Engenharia bancária, feita como produto."*
-- Sub: "DIO Bank Pro é um core bancário em TypeScript construído com Clean Architecture, SOLID e cobertura de testes — pronto para evoluir como um produto fintech real."
-- CTAs: **Explorar o código** / Ler a documentação
-
-**Features (6 cards bento)**
-1. TypeScript estrito — tipagem ponta a ponta, zero `any`.
-2. Clean Architecture — domínio isolado de frameworks.
-3. SOLID na prática — cada módulo com responsabilidade única.
-4. Testes automatizados — unitários + integração com Vitest.
-5. Documentação profissional — READMEs por camada e ADRs.
-6. Evolução contínua — do desafio DIO a um produto modular.
-
-**Métricas (sem prova social falsa — todas rotuladas como "indicadores do projeto")**
-- Cobertura de testes: 92%
-- Módulos implementados: 14
-- Camadas arquiteturais: 4
-- Densidade de tipos: 100% TS estrito
-
-Cada card traz um rótulo claro "indicador interno do projeto" para reforçar que não são clientes/usuários reais.
-
-**Arquitetura em camadas**
-Bloco visual com as 4 camadas empilhadas, cada uma com 1 frase explicativa e ícone lucide.
-
-## Componente do globo
-
-`src/components/globe-global.tsx` — adaptação **light** do `GlobeLive` enviado:
-- `baseColor` claro (próximo do background), `markerColor` teal `[0.18, 0.54, 0.62]`, `glowColor` navy suave, `dark: 0`, `mapBrightness` ~1.2.
-- Markers passam a representar **camadas/módulos do sistema** (não nós de rede): Domain, Application, Infrastructure, Presentation, Tests, Docs — cada um com label "module" + status ("stable", "covered", "documented").
-- HUD lateral substituído por: contador "operações simuladas /s" rotulado claramente como **simulação local** (sem implicar tráfego real).
-- Mantém drag, rotação automática e tooltips ancorados.
-- Tipos corrigidos (`useRef<HTMLCanvasElement>(null)`, `ReturnType<typeof createGlobe>`) — o snippet original tem `useRef(null)` e `ReturnType` sem argumento, que quebram em TS estrito.
-
-## Arquivos a criar/editar
-
-- `package.json` — adicionar `cobe`, `framer-motion`, `@fontsource/instrument-serif`, `@fontsource/inter`.
-- `src/styles.css` — tokens Navy & Teal + utilitários `@utility` para `.eyebrow`, `.hairline`, `.gradient-accent`.
-- `src/main.tsx` ou entry equivalente — importar as fontes.
-- `src/routes/__root.tsx` — title/description/OG da landing.
-- `src/routes/index.tsx` — composição da página (substitui qualquer placeholder).
-- `src/components/site/nav.tsx`
-- `src/components/site/hero.tsx`
-- `src/components/site/principles-strip.tsx`
-- `src/components/site/features-bento.tsx`
-- `src/components/site/metrics.tsx` (com `framer-motion` para contagem)
-- `src/components/site/architecture.tsx`
-- `src/components/site/footer.tsx`
-- `src/components/globe-global.tsx`
-
-## O que fica de fora deste MVP
-
-- Sem backend, sem Lovable Cloud, sem i18n switcher (só PT-BR).
-- Sem logos de empresas/mídia/clientes e sem depoimentos.
-- Sem páginas internas (`/about`, `/docs`) — apenas a landing com âncoras.
+- Não mexer em outras seções da landing.
+- Não trocar paleta global nem fontes.
+- Sem backend / dados reais — pulsos continuam sendo simulação visual.

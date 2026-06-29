@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import createGlobe from "cobe";
 
 export interface GlobeMarker {
   id: string;
-  name: string;
-  status: string;
-  meta: string;
+  city: string;
   location: [number, number];
 }
 
@@ -17,34 +15,86 @@ interface GlobeGlobalProps {
 }
 
 const defaultMarkers: GlobeMarker[] = [
-  { id: "domain", name: "Domain", status: "STABLE", meta: "núcleo", location: [-23.55, -46.63] },
-  { id: "application", name: "Application", status: "COVERED", meta: "use cases", location: [40.71, -74.01] },
-  { id: "infra", name: "Infrastructure", status: "ADAPTERS", meta: "DB · HTTP", location: [51.51, -0.13] },
-  { id: "presentation", name: "Presentation", status: "API", meta: "REST", location: [35.68, 139.65] },
-  { id: "tests", name: "Tests", status: "92% COV", meta: "vitest", location: [37.78, -122.44] },
-  { id: "docs", name: "Docs", status: "ADRs", meta: "by layer", location: [-33.86, 151.21] },
+  { id: "nyc", city: "New York", location: [40.71, -74.01] },
+  { id: "sfo", city: "San Francisco", location: [37.78, -122.44] },
+  { id: "sao", city: "São Paulo", location: [-23.55, -46.63] },
+  { id: "lon", city: "London", location: [51.51, -0.13] },
+  { id: "fra", city: "Frankfurt", location: [50.11, 8.68] },
+  { id: "bom", city: "Mumbai", location: [19.07, 72.87] },
+  { id: "sin", city: "Singapore", location: [1.35, 103.82] },
+  { id: "hkg", city: "Hong Kong", location: [22.32, 114.17] },
+  { id: "tyo", city: "Tokyo", location: [35.68, 139.65] },
+  { id: "syd", city: "Sydney", location: [-33.86, 151.21] },
 ];
+
+// project lat/long onto 2D using current globe phi/theta orientation
+function project(
+  lat: number,
+  lng: number,
+  phi: number,
+  theta: number,
+): { x: number; y: number; visible: boolean } {
+  const latRad = (lat * Math.PI) / 180;
+  const lngRad = (lng * Math.PI) / 180;
+  // 3D point on unit sphere
+  const x0 = Math.cos(latRad) * Math.sin(lngRad);
+  const y0 = Math.sin(latRad);
+  const z0 = Math.cos(latRad) * Math.cos(lngRad);
+  // rotate by -phi around Y (longitude offset)
+  const cp = Math.cos(-phi);
+  const sp = Math.sin(-phi);
+  const x1 = cp * x0 + sp * z0;
+  const z1 = -sp * x0 + cp * z0;
+  // rotate by theta around X (tilt)
+  const ct = Math.cos(theta);
+  const st = Math.sin(theta);
+  const y2 = ct * y0 - st * z1;
+  const z2 = st * y0 + ct * z1;
+  return { x: x1, y: -y2, visible: z2 > 0.05 };
+}
 
 export function GlobeGlobal({
   markers = defaultMarkers,
   className = "",
-  speed = 0.0025,
+  speed = 0.003,
 }: GlobeGlobalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const pointerInteracting = useRef<{ x: number; y: number } | null>(null);
   const dragOffset = useRef({ phi: 0, theta: 0 });
   const phiOffsetRef = useRef(0);
   const thetaOffsetRef = useRef(0);
   const isPausedRef = useRef(false);
 
-  const [opsPerSec, setOpsPerSec] = useState(2847);
+  const [orientation, setOrientation] = useState({ phi: 0, theta: 0.3 });
+  const [eventsPerSec, setEventsPerSec] = useState(1284);
+  const [pulseKey, setPulseKey] = useState(0);
+  const [activeIds, setActiveIds] = useState<string[]>([]);
 
+  // Live counter
   useEffect(() => {
     const id = window.setInterval(() => {
-      setOpsPerSec((v) => Math.max(1800, v + Math.floor(Math.random() * 21) - 8));
-    }, 900);
+      setEventsPerSec((v) => Math.max(900, v + Math.floor(Math.random() * 41) - 18));
+    }, 700);
     return () => window.clearInterval(id);
   }, []);
+
+  // Trigger pulses on random markers periodically
+  useEffect(() => {
+    const tick = () => {
+      const n = 2 + Math.floor(Math.random() * 3);
+      const picks: string[] = [];
+      const pool = [...markers];
+      for (let i = 0; i < n && pool.length; i++) {
+        picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+      }
+      setActiveIds(picks);
+      setPulseKey((k) => k + 1);
+    };
+    tick();
+    const id = window.setInterval(tick, 1800);
+    return () => window.clearInterval(id);
+  }, [markers]);
 
   const handlePointerDown = useCallback((event: ReactPointerEvent) => {
     pointerInteracting.current = { x: event.clientX, y: event.clientY };
@@ -88,6 +138,7 @@ export function GlobeGlobal({
     let animationId = 0;
     let resizeObserver: ResizeObserver | null = null;
     let phi = 0;
+    let frame = 0;
 
     const initGlobe = () => {
       const width = canvas.offsetWidth;
@@ -98,27 +149,26 @@ export function GlobeGlobal({
         width: width * 2,
         height: width * 2,
         phi: 0,
-        theta: 0.25,
-        dark: 0,
-        diffuse: 1.4,
+        theta: 0.3,
+        dark: 1,
+        diffuse: 1.2,
         mapSamples: 16000,
-        mapBrightness: 7,
-        baseColor: [0.18, 0.28, 0.42],
-        markerColor: [0.95, 0.65, 0.25],
-        glowColor: [0.85, 0.9, 0.96],
-        markers: markers.map((m) => ({ location: m.location, size: 0.08 })),
+        mapBrightness: 6,
+        baseColor: [0.25, 0.35, 0.5],
+        markerColor: [0.18, 0.85, 0.78],
+        glowColor: [0.12, 0.18, 0.32],
+        markers: markers.map((m) => ({ location: m.location, size: 0.06 })),
         opacity: 1,
-
-
       });
 
       const animate = () => {
         if (!globe) return;
         if (!isPausedRef.current) phi += speed;
-        globe.update({
-          phi: phi + phiOffsetRef.current + dragOffset.current.phi,
-          theta: 0.25 + thetaOffsetRef.current + dragOffset.current.theta,
-        });
+        const curPhi = phi + phiOffsetRef.current + dragOffset.current.phi;
+        const curTheta = 0.3 + thetaOffsetRef.current + dragOffset.current.theta;
+        globe.update({ phi: curPhi, theta: curTheta });
+        // Update React state ~10x/s so overlay tracks rotation without re-rendering every frame
+        if (frame++ % 6 === 0) setOrientation({ phi: curPhi, theta: curTheta });
         animationId = window.requestAnimationFrame(animate);
       };
       animate();
@@ -143,22 +193,34 @@ export function GlobeGlobal({
     };
   }, [markers, speed]);
 
+  // Project markers to overlay coords (sphere radius ~ 45% of container)
+  const projected = useMemo(() => {
+    return markers.map((m) => {
+      const p = project(m.location[0], m.location[1], orientation.phi, orientation.theta);
+      return {
+        ...m,
+        // center 50%, radius scale ~45%
+        left: `${50 + p.x * 45}%`,
+        top: `${50 + p.y * 45}%`,
+        visible: p.visible,
+      };
+    });
+  }, [markers, orientation]);
+
   return (
-    <div className={`relative aspect-square w-full ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative aspect-square w-full ${className}`}
+    >
       {/* outer glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-[-8%] rounded-full"
+        className="pointer-events-none absolute inset-[-10%] rounded-full"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(45,138,158,0.28), rgba(12,35,64,0.10) 55%, transparent 72%)",
-          filter: "blur(24px)",
+            "radial-gradient(circle at 50% 50%, rgba(45,138,158,0.35), rgba(12,35,64,0.0) 60%)",
+          filter: "blur(28px)",
         }}
-      />
-      {/* hairline ring */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[2%] rounded-full border border-[rgba(12,35,64,0.12)]"
       />
       <canvas
         ref={canvasRef}
@@ -167,22 +229,72 @@ export function GlobeGlobal({
         style={{ contain: "layout paint size" }}
       />
 
+      {/* Pulse overlay */}
+      <div className="pointer-events-none absolute inset-0">
+        {projected.map((m) => {
+          if (!m.visible) return null;
+          const isActive = activeIds.includes(m.id);
+          return (
+            <div
+              key={m.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ left: m.left, top: m.top }}
+            >
+              {/* core dot */}
+              <span
+                className="block h-1.5 w-1.5 rounded-full"
+                style={{
+                  background: "rgb(64, 224, 208)",
+                  boxShadow: "0 0 8px rgba(64,224,208,0.9)",
+                }}
+              />
+              {/* pulse rings */}
+              {isActive && (
+                <>
+                  <span
+                    key={`r1-${pulseKey}`}
+                    className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-[rgba(64,224,208,0.8)]"
+                    style={{ animation: "globe-pulse 1.6s ease-out forwards" }}
+                  />
+                  <span
+                    key={`r2-${pulseKey}`}
+                    className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-[rgba(64,224,208,0.6)]"
+                    style={{ animation: "globe-pulse 1.6s ease-out 0.35s forwards" }}
+                  />
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* HUD — simulação local */}
-      <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3 text-foreground">
-        <div className="rounded-md border border-border bg-card/80 px-3 py-2 backdrop-blur-sm">
-          <div className="font-display text-2xl leading-none tabular-nums">
-            {opsPerSec.toLocaleString("pt-BR")}
+      {/* HUD */}
+      <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
+        <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md">
+          <div className="font-display text-2xl leading-none tabular-nums text-white">
+            {eventsPerSec.toLocaleString("pt-BR")}
           </div>
-          <div className="eyebrow mt-1 text-[0.6rem]">
-            ops/s · simulação local
+          <div className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/60">
+            eventos/s · simulação
           </div>
         </div>
-        <div className="rounded-md border border-border bg-card/80 px-3 py-2 text-right backdrop-blur-sm">
-          <div className="eyebrow text-[0.6rem]">camadas</div>
-          <div className="font-display text-lg leading-none">{markers.length} módulos</div>
+        <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+          </span>
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/80">
+            Live
+          </span>
         </div>
       </div>
+
+      <style>{`
+        @keyframes globe-pulse {
+          0%   { transform: translate(-50%,-50%) scale(1);  opacity: 0.9; }
+          100% { transform: translate(-50%,-50%) scale(10); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

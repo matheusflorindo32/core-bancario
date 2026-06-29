@@ -78,13 +78,22 @@ export function Hero() {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: "easeOut", delay: 0.1 }}
-          className="relative mx-auto w-full max-w-[520px]"
+          className="relative mx-auto w-full max-w-[560px]"
         >
-          <GlobeGlobal />
+          <div
+            className="relative rounded-3xl p-6 shadow-2xl ring-1 ring-white/5"
+            style={{
+              background:
+                "radial-gradient(120% 90% at 50% 0%, #0c2340 0%, #06101f 70%, #04080f 100%)",
+            }}
+          >
+            <GlobeGlobal />
+          </div>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Representação visual dos módulos do sistema — sem dados de clientes reais.
+            Rede global simulada · 10 regiões · pulsos de tráfego em tempo real.
           </p>
         </motion.div>
+
       </div>
     </section>
   );
