@@ -250,7 +250,7 @@ export function GlobeGlobal({
   return (
     <div
       ref={containerRef}
-      className={`relative aspect-square w-full ${className}`}
+      className={`relative aspect-square min-h-[320px] w-full ${className}`}
     >
       {/* outer glow */}
       <div
@@ -266,7 +266,8 @@ export function GlobeGlobal({
         ref={canvasRef}
         onPointerDown={handlePointerDown}
         className="absolute inset-0 h-full w-full touch-none cursor-grab opacity-0 transition-opacity duration-700"
-        style={{ contain: "layout paint size" }}
+        width={960}
+        height={960}
       />
 
       {/* Pulse overlay */}
