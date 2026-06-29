@@ -77,16 +77,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "A multilingual data science dashboard for analyzing active attack data." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "A multilingual data science dashboard for analyzing active attack data." },
+      { title: "DIO Bank Pro — Core bancário em TypeScript com Clean Architecture" },
+      { name: "description", content: "DIO Bank Pro é um core bancário open source em TypeScript, construído com Clean Architecture, princípios SOLID e testes automatizados." },
+      { name: "author", content: "DIO Bank Pro" },
+      { property: "og:title", content: "DIO Bank Pro — Core bancário em TypeScript com Clean Architecture" },
+      { property: "og:description", content: "DIO Bank Pro é um core bancário open source em TypeScript, construído com Clean Architecture, princípios SOLID e testes automatizados." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "A multilingual data science dashboard for analyzing active attack data." },
+      { name: "twitter:site", content: "@DIOBankPro" },
+      { name: "twitter:title", content: "DIO Bank Pro — Core bancário em TypeScript com Clean Architecture" },
+      { name: "twitter:description", content: "DIO Bank Pro é um core bancário open source em TypeScript, construído com Clean Architecture, princípios SOLID e testes automatizados." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -106,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
