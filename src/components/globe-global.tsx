@@ -100,13 +100,13 @@ export function GlobeGlobal({
         phi: 0,
         theta: 0.25,
         dark: 0,
-        diffuse: 1.1,
+        diffuse: 1.2,
         mapSamples: 16000,
-        mapBrightness: 1.35,
-        baseColor: [0.95, 0.96, 0.98],
+        mapBrightness: 6,
+        baseColor: [0.32, 0.42, 0.55],
         markerColor: [0.176, 0.541, 0.62],
-        glowColor: [0.85, 0.9, 0.96],
-        markers: markers.map((m) => ({ location: m.location, size: 0.05 })),
+        glowColor: [0.78, 0.85, 0.92],
+        markers: markers.map((m) => ({ location: m.location, size: 0.06 })),
         opacity: 1,
       });
 
