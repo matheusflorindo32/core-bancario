@@ -29,57 +29,8 @@ const defaultMarkers: GlobeMarker[] = [
   { id: "syd", city: "Sydney", location: [-33.86, 151.21] },
 ];
 
-const landMasses: { id: string; rings: LatLng[][] }[] = [
-  {
-    id: "north-america",
-    rings: [[
-      [14, -91], [22, -111], [38, -124], [55, -133], [71, -105], [63, -74],
-      [52, -55], [39, -73], [27, -81], [18, -88], [14, -91],
-    ]],
-  },
-  {
-    id: "south-america",
-    rings: [[
-      [12, -77], [7, -58], [-6, -44], [-20, -40], [-35, -53], [-55, -69],
-      [-31, -76], [-8, -79], [12, -77],
-    ]],
-  },
-  {
-    id: "greenland",
-    rings: [[
-      [60, -52], [67, -62], [82, -42], [76, -18], [63, -32], [60, -52],
-    ]],
-  },
-  {
-    id: "europe-africa",
-    rings: [[
-      [36, -10], [44, -9], [56, 4], [70, 25], [58, 43], [43, 38], [31, 32],
-      [12, 43], [-5, 40], [-35, 19], [-30, 14], [-14, 13], [3, 9], [15, -16],
-      [29, -17], [36, -10],
-    ]],
-  },
-  {
-    id: "asia",
-    rings: [[
-      [42, 30], [56, 48], [66, 82], [58, 121], [47, 145], [32, 124], [14, 108],
-      [20, 79], [8, 73], [18, 44], [30, 35], [42, 30],
-    ]],
-  },
-  {
-    id: "australia",
-    rings: [[
-      [-10, 113], [-19, 130], [-12, 153], [-27, 154], [-39, 144], [-34, 116], [-10, 113],
-    ]],
-  },
-  {
-    id: "islands",
-    rings: [
-      [[-6, 106], [-2, 120], [-8, 130], [-11, 115], [-6, 106]],
-      [[35, 139], [42, 142], [39, 146], [32, 141], [35, 139]],
-      [[52, -4], [58, -3], [56, 1], [50, 1], [52, -4]],
-    ],
-  },
-];
+const cobeMapTexture =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAACAAQAAAADMzoqnAAAECklEQVR42u3VsW4jRRzH8d94gzfF4Q0VQaC4vBLTRTp0mze4ggfAPAE5XQEFsGNAVIjwBrmW7h7gJE+giKjyABTZE4g06LKJETdRJvtD65kdz6yduKABiW+TVfzRf2bXYxtcE/59YJCz6YdbgQF6ACSRrwYKYImmh5PbwOewlV3wlQNbAN6SEExjUOO+BU0aCSnxReHABUlK4YFQeJeUT3da8IIkZ6NGoSnFY5KsMoVzMKfECUnqxgPYRArarmUCndHwzIEaQEpg5xVdBXROl8mpAQx5dUgPiHoYAAkg5w3JABR06byGAVgcRGAz5bznj6phBQNRFwyqgdxebH6gshJAesWoFhgYpApAFoG8BIZ/fEhSox5jDjQXmV0Ar5XJfAIrALi3URVs09gHIL4XJCkLC5LH9JWiArABFCSrQjdgkBzRJ0WJeUOSNyQAfJJwUSWUBRlJQ8oGHATACGlBynnzy2kEYLNjrxouigD8BZcgOeVPqh12RtufaCN5wCPVDpvQ9lsIrqndsJtDcWqBCpf4hWN7OdWHBw58FwIaNOU/n1TpMW2DFaD48cmr4185T8NHkpUFX749pQPVdgRKC/DGoQPVeAEKv+WHvY8OOWNTPRp5kHuwSf8wzXtVBKR7YwEH9H3lQUaypUfSATOALyVNu5vZJW31Bnx98nkLfDUWJaz6ixvm+RIQRdl3kmRxxiaDoGnZW4CpPfkaQadlcPim1xOSvETQo7Lv75enVAXJ3xGUlony4KQBBWUM1NiDc6qhyS8RgQs18OCMMtPDaAUIyg0PZkRWDqs+wnKJBTDI1Js6BolegOsKmUxNDBAAKqQyMQmidhegBlLZ+wwKYdv5M/8x1khkb1cgKqP2H+MKyV5vS+whrE8DQDgAlUAoRBX056EElJCjJVACeJBZgNfVp+iCCm4RBWCgKsRxASSA9KgDhDtCiTuMyfHsKXzhC6wNAIjjWb8LKAOA2ctk3FmCOlgKFy8f1N0JJtgsxinYnVAHt4t3gPzZXSCTyCWCQmBT91QE3B5yarSN40dNHYPka4TlDhTUI8zLvl0JSL3vZn6DsCFZOeB2yROEpR68sECQQA++xIGCR2X7DwlEoLRgUrZrqlUg50S1uy43YqDcN6UFBVkhAjWiCV2Q0jgQPdplMKxvBXodcOfAwJYvgdL+1etA1YJJfBcZlQV7sO1i2gHoNiyxtQ5sBsCgWyoxCHiFFd2L5nUTCqMAqGUgsQ9f5kCcCiZgRYkMgMTd5WsB1rTzj0Em14BE4r+QxN1lCEsVur2PoF5Wbg8RJXR4djgvBgauhLywoEZQrt1KKRdVS4CdlJ8qafyP+9KIj/nE/d7kKwH9jgS72e9DV+kvfTWgct4ZyP8Byb8BPG7MaaIIkAQAAAAASUVORK5CYII=";
 
 // project lat/long onto 2D using current globe phi/theta orientation
 function project(
@@ -124,6 +75,7 @@ export function GlobeGlobal({
   const [eventsPerSec, setEventsPerSec] = useState(1284);
   const [pulseKey, setPulseKey] = useState(0);
   const [activeIds, setActiveIds] = useState<string[]>([]);
+  const [mapDots, setMapDots] = useState<LatLng[]>([]);
 
   // Live counter
   useEffect(() => {
@@ -131,6 +83,46 @@ export function GlobeGlobal({
       setEventsPerSec((v) => Math.max(900, v + Math.floor(Math.random() * 41) - 18));
     }, 700);
     return () => window.clearInterval(id);
+  }, []);
+
+  // Build the same dotted world map used by cobe, so the map remains visible
+  // even when WebGL texture brightness varies between browsers.
+  useEffect(() => {
+    let cancelled = false;
+    const image = new Image();
+    image.onload = () => {
+      const sampler = document.createElement("canvas");
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      sampler.width = width;
+      sampler.height = height;
+
+      const context = sampler.getContext("2d");
+      if (!context) return;
+
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, width, height).data;
+      const dots: LatLng[] = [];
+      const sampleStep = 3;
+
+      for (let y = 0; y < height; y += sampleStep) {
+        for (let x = 0; x < width; x += sampleStep) {
+          const value = pixels[(y * width + x) * 4];
+          if (value < 18) continue;
+
+          const longitude = (x / (width - 1)) * 360 - 180;
+          const latitude = 90 - (y / (height - 1)) * 180;
+          dots.push([latitude, longitude]);
+        }
+      }
+
+      if (!cancelled) setMapDots(dots);
+    };
+    image.src = cobeMapTexture;
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Trigger pulses on random markers periodically
@@ -301,65 +293,19 @@ export function GlobeGlobal({
     });
   }, [markers, orientation]);
 
-  const globeGrid = useMemo(
-    () =>
-      Array.from({ length: 34 }, (_, index) => {
-        const y = -0.92 + (index / 33) * 1.84;
-        const halfWidth = Math.sqrt(Math.max(0, 1 - y * y));
-        return {
-          id: `lat-${index}`,
-          top: `${50 + y * 42}%`,
-          left: `${50 - halfWidth * 42}%`,
-          width: `${halfWidth * 84}%`,
-          opacity: 0.1 + halfWidth * 0.24,
-        };
-      }),
-    [],
-  );
+  const projectedMapDots = useMemo(() => {
+    return mapDots.flatMap(([lat, lng], index) => {
+      const point = project(lat, lng, orientation.phi, orientation.theta);
+      if (!point.visible) return [];
 
-  const globeDots = useMemo(
-    () =>
-      Array.from({ length: 240 }, (_, index) => {
-        const k = index + 0.5;
-        const phi = Math.acos(1 - (2 * k) / 240);
-        const theta = Math.PI * (1 + Math.sqrt(5)) * k;
-        const x = Math.cos(theta) * Math.sin(phi);
-        const y = Math.sin(theta) * Math.sin(phi);
-        const z = Math.cos(phi);
-        const landBias =
-          Math.sin((x + 1.3) * 9) +
-          Math.cos((y - 0.2) * 7) +
-          Math.sin((x + y) * 12);
-
-        return {
-          id: `dot-${index}`,
-          left: `${50 + x * 41}%`,
-          top: `${50 + y * 41}%`,
-          opacity: z > -0.55 && landBias > -0.25 ? 0.22 + Math.max(0, z) * 0.38 : 0,
-          size: landBias > 1.1 ? 2 : 1.35,
-        };
-      }),
-    [],
-  );
-
-  const landPaths = useMemo(() => {
-    return landMasses.flatMap((land) =>
-      land.rings.map((ring, ringIndex) => {
-        const points = ring
-          .map(([lat, lng]) => project(lat, lng, orientation.phi, orientation.theta))
-          .filter((point) => point.visible)
-          .map((point) => [50 + point.x * 43, 50 + point.y * 43]);
-
-        if (points.length < 3) return null;
-
-        const d = points
-          .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
-          .join(" ");
-
-        return { id: `${land.id}-${ringIndex}`, d: `${d} Z` };
-      }),
-    ).filter(Boolean) as { id: string; d: string }[];
-  }, [orientation]);
+      return {
+        id: `map-dot-${index}`,
+        cx: 50 + point.x * 39.5,
+        cy: 50 + point.y * 39.5,
+        opacity: 0.24 + Math.max(0, point.y * -0.15),
+      };
+    });
+  }, [mapDots, orientation]);
 
   return (
     <div
@@ -393,6 +339,32 @@ export function GlobeGlobal({
         width={960}
         height={960}
       />
+
+      <svg
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 100 100"
+      >
+        <defs>
+          <radialGradient id="map-dot-fade" cx="42%" cy="36%" r="60%">
+            <stop offset="0%" stopColor="rgb(123, 245, 232)" stopOpacity="0.95" />
+            <stop offset="72%" stopColor="rgb(45, 138, 158)" stopOpacity="0.72" />
+            <stop offset="100%" stopColor="rgb(45, 138, 158)" stopOpacity="0.18" />
+          </radialGradient>
+        </defs>
+        <g filter="drop-shadow(0 0 0.7px rgba(96, 255, 238, 0.65))">
+          {projectedMapDots.map((dot) => (
+            <circle
+              key={dot.id}
+              cx={dot.cx}
+              cy={dot.cy}
+              r="0.18"
+              fill="url(#map-dot-fade)"
+              opacity={dot.opacity}
+            />
+          ))}
+        </g>
+      </svg>
 
 
       {/* Pulse overlay */}
