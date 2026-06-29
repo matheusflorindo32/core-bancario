@@ -297,8 +297,7 @@ Este projeto está licenciado sob a **MIT License** — veja o arquivo [LICENSE]
 
 **Matheus Florindo de Deus**
 - 🎓 Aluno de Análise e Desenvolvimento de Sistemas — IFES
-- 🎓 Bacharel em Educação Física (UniFatecie)
-- 🎓 Gestão Ambiental (UNIASSELVI)
+- 🎓 Licenciado em Educação Física — UniVitória
 - 🔬 Pesquisador UFES (ORCID: 0009-0006-3848-0662)
 - 💻 Especialista em Cloud Computing, Big Data e Segurança da Informação
 - 📧 matheusdideusf@gmail.com
