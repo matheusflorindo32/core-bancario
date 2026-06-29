@@ -100,14 +100,16 @@ export function GlobeGlobal({
         phi: 0,
         theta: 0.25,
         dark: 0,
-        diffuse: 1.2,
+        diffuse: 1.4,
         mapSamples: 16000,
-        mapBrightness: 6,
-        baseColor: [0.32, 0.42, 0.55],
-        markerColor: [0.176, 0.541, 0.62],
-        glowColor: [0.78, 0.85, 0.92],
-        markers: markers.map((m) => ({ location: m.location, size: 0.06 })),
+        mapBrightness: 7,
+        baseColor: [0.18, 0.28, 0.42],
+        markerColor: [0.95, 0.65, 0.25],
+        glowColor: [0.85, 0.9, 0.96],
+        markers: markers.map((m) => ({ location: m.location, size: 0.08 })),
         opacity: 1,
+
+
       });
 
       const animate = () => {
@@ -143,15 +145,20 @@ export function GlobeGlobal({
 
   return (
     <div className={`relative aspect-square w-full ${className}`}>
-      {/* soft glow */}
+      {/* outer glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full"
+        className="pointer-events-none absolute inset-[-8%] rounded-full"
         style={{
           background:
-            "radial-gradient(circle at 50% 55%, rgba(45,138,158,0.18), transparent 60%)",
-          filter: "blur(20px)",
+            "radial-gradient(circle at 50% 50%, rgba(45,138,158,0.28), rgba(12,35,64,0.10) 55%, transparent 72%)",
+          filter: "blur(24px)",
         }}
+      />
+      {/* hairline ring */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-[2%] rounded-full border border-[rgba(12,35,64,0.12)]"
       />
       <canvas
         ref={canvasRef}
@@ -159,6 +166,7 @@ export function GlobeGlobal({
         className="absolute inset-0 h-full w-full touch-none cursor-grab opacity-0 transition-opacity duration-700"
         style={{ contain: "layout paint size" }}
       />
+
 
       {/* HUD — simulação local */}
       <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3 text-foreground">
