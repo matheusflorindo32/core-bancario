@@ -247,6 +247,47 @@ export function GlobeGlobal({
     });
   }, [markers, orientation]);
 
+  const globeGrid = useMemo(
+    () =>
+      Array.from({ length: 34 }, (_, index) => {
+        const y = -0.92 + (index / 33) * 1.84;
+        const halfWidth = Math.sqrt(Math.max(0, 1 - y * y));
+        return {
+          id: `lat-${index}`,
+          top: `${50 + y * 42}%`,
+          left: `${50 - halfWidth * 42}%`,
+          width: `${halfWidth * 84}%`,
+          opacity: 0.1 + halfWidth * 0.24,
+        };
+      }),
+    [],
+  );
+
+  const globeDots = useMemo(
+    () =>
+      Array.from({ length: 240 }, (_, index) => {
+        const k = index + 0.5;
+        const phi = Math.acos(1 - (2 * k) / 240);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * k;
+        const x = Math.cos(theta) * Math.sin(phi);
+        const y = Math.sin(theta) * Math.sin(phi);
+        const z = Math.cos(phi);
+        const landBias =
+          Math.sin((x + 1.3) * 9) +
+          Math.cos((y - 0.2) * 7) +
+          Math.sin((x + y) * 12);
+
+        return {
+          id: `dot-${index}`,
+          left: `${50 + x * 41}%`,
+          top: `${50 + y * 41}%`,
+          opacity: z > -0.55 && landBias > -0.25 ? 0.22 + Math.max(0, z) * 0.38 : 0,
+          size: landBias > 1.1 ? 2 : 1.35,
+        };
+      }),
+    [],
+  );
+
   return (
     <div
       ref={containerRef}
@@ -262,10 +303,68 @@ export function GlobeGlobal({
           filter: "blur(28px)",
         }}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-[4%] overflow-hidden rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 34% 28%, rgba(221,250,255,0.28), rgba(45,138,158,0.12) 32%, rgba(6,16,31,0.92) 70%, rgba(2,6,12,0.98) 100%)",
+          boxShadow:
+            "inset -42px -34px 78px rgba(0,0,0,0.62), inset 22px 20px 48px rgba(80,220,230,0.12), 0 0 70px rgba(45,138,158,0.35)",
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full opacity-70"
+          style={{
+            background:
+              "linear-gradient(115deg, transparent 0 44%, rgba(83,220,224,0.18) 45%, transparent 48% 100%), radial-gradient(circle at 62% 44%, rgba(64,224,208,0.22), transparent 18%)",
+          }}
+        />
+        {globeGrid.map((line) => (
+          <span
+            key={line.id}
+            className="absolute h-px rounded-full bg-cyan-100/70"
+            style={{
+              top: line.top,
+              left: line.left,
+              width: line.width,
+              opacity: line.opacity,
+            }}
+          />
+        ))}
+        {Array.from({ length: 18 }, (_, index) => (
+          <span
+            key={`lon-${index}`}
+            className="absolute left-1/2 top-1/2 h-[84%] w-px origin-center -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-100/20"
+            style={{ transform: `translate(-50%, -50%) rotate(${index * 10}deg) scaleX(${0.18 + (index % 9) * 0.06})` }}
+          />
+        ))}
+        {globeDots.map((dot) => (
+          <span
+            key={dot.id}
+            className="absolute rounded-full bg-cyan-100"
+            style={{
+              left: dot.left,
+              top: dot.top,
+              width: dot.size,
+              height: dot.size,
+              opacity: dot.opacity,
+              boxShadow: dot.opacity ? "0 0 8px rgba(103,232,249,0.55)" : "none",
+            }}
+          />
+        ))}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 50%, transparent 55%, rgba(64,224,208,0.26) 64%, transparent 66%)",
+          }}
+        />
+      </div>
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
-        className="absolute inset-0 h-full w-full touch-none cursor-grab opacity-0 transition-opacity duration-700"
+        className="absolute inset-0 h-full w-full touch-none cursor-grab opacity-0 mix-blend-screen transition-opacity duration-700"
         width={960}
         height={960}
       />
