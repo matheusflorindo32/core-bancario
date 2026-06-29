@@ -8,6 +8,8 @@ export interface GlobeMarker {
   location: [number, number];
 }
 
+type LatLng = [number, number];
+
 interface GlobeGlobalProps {
   markers?: GlobeMarker[];
   className?: string;
@@ -25,6 +27,58 @@ const defaultMarkers: GlobeMarker[] = [
   { id: "hkg", city: "Hong Kong", location: [22.32, 114.17] },
   { id: "tyo", city: "Tokyo", location: [35.68, 139.65] },
   { id: "syd", city: "Sydney", location: [-33.86, 151.21] },
+];
+
+const landMasses: { id: string; rings: LatLng[][] }[] = [
+  {
+    id: "north-america",
+    rings: [[
+      [14, -91], [22, -111], [38, -124], [55, -133], [71, -105], [63, -74],
+      [52, -55], [39, -73], [27, -81], [18, -88], [14, -91],
+    ]],
+  },
+  {
+    id: "south-america",
+    rings: [[
+      [12, -77], [7, -58], [-6, -44], [-20, -40], [-35, -53], [-55, -69],
+      [-31, -76], [-8, -79], [12, -77],
+    ]],
+  },
+  {
+    id: "greenland",
+    rings: [[
+      [60, -52], [67, -62], [82, -42], [76, -18], [63, -32], [60, -52],
+    ]],
+  },
+  {
+    id: "europe-africa",
+    rings: [[
+      [36, -10], [44, -9], [56, 4], [70, 25], [58, 43], [43, 38], [31, 32],
+      [12, 43], [-5, 40], [-35, 19], [-30, 14], [-14, 13], [3, 9], [15, -16],
+      [29, -17], [36, -10],
+    ]],
+  },
+  {
+    id: "asia",
+    rings: [[
+      [42, 30], [56, 48], [66, 82], [58, 121], [47, 145], [32, 124], [14, 108],
+      [20, 79], [8, 73], [18, 44], [30, 35], [42, 30],
+    ]],
+  },
+  {
+    id: "australia",
+    rings: [[
+      [-10, 113], [-19, 130], [-12, 153], [-27, 154], [-39, 144], [-34, 116], [-10, 113],
+    ]],
+  },
+  {
+    id: "islands",
+    rings: [
+      [[-6, 106], [-2, 120], [-8, 130], [-11, 115], [-6, 106]],
+      [[35, 139], [42, 142], [39, 146], [32, 141], [35, 139]],
+      [[52, -4], [58, -3], [56, 1], [50, 1], [52, -4]],
+    ],
+  },
 ];
 
 // project lat/long onto 2D using current globe phi/theta orientation
@@ -288,6 +342,25 @@ export function GlobeGlobal({
     [],
   );
 
+  const landPaths = useMemo(() => {
+    return landMasses.flatMap((land) =>
+      land.rings.map((ring, ringIndex) => {
+        const points = ring
+          .map(([lat, lng]) => project(lat, lng, orientation.phi, orientation.theta))
+          .filter((point) => point.visible)
+          .map((point) => [50 + point.x * 43, 50 + point.y * 43]);
+
+        if (points.length < 3) return null;
+
+        const d = points
+          .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+          .join(" ");
+
+        return { id: `${land.id}-${ringIndex}`, d: `${d} Z` };
+      }),
+    ).filter(Boolean) as { id: string; d: string }[];
+  }, [orientation]);
+
   return (
     <div
       ref={containerRef}
@@ -339,6 +412,33 @@ export function GlobeGlobal({
             style={{ transform: `translate(-50%, -50%) rotate(${index * 10}deg) scaleX(${0.18 + (index % 9) * 0.06})` }}
           />
         ))}
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <filter id="land-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="0.7" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          {landPaths.map((path) => (
+            <path
+              key={path.id}
+              d={path.d}
+              fill="rgba(45, 205, 210, 0.24)"
+              stroke="rgba(160, 245, 255, 0.58)"
+              strokeWidth="0.35"
+              vectorEffect="non-scaling-stroke"
+              filter="url(#land-glow)"
+            />
+          ))}
+        </svg>
         {globeDots.map((dot) => (
           <span
             key={dot.id}
