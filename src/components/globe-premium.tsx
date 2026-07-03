@@ -174,13 +174,6 @@ export default function GlobePremium({
         });
       }
     }
-        alpha: true,
-        powerPreference: "high-performance",
-      });
-    } catch {
-      setStatus("webgl-error");
-      return;
-    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height, false);
     renderer.setClearColor(0x000000, 0);
