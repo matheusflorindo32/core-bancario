@@ -80,18 +80,6 @@ const atmosphereFragment = /* glsl */ `
   }
 `;
 
-function detectWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext("webgl2") || canvas.getContext("webgl"))
-    );
-  } catch {
-    return false;
-  }
-}
-
 export default function GlobePremium({
   markers = DEFAULT_MARKERS,
   className = "",
@@ -100,18 +88,13 @@ export default function GlobePremium({
   const [status, setStatus] = useState<"loading" | "ready" | "webgl-error" | "texture-error">(
     "loading",
   );
+  const [softwareRender, setSoftwareRender] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    if (!detectWebGL()) {
-      setStatus("webgl-error");
-      return;
-    }
-
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
-    const segments = isMobile ? 48 : 72;
 
     let disposed = false;
     let animationId = 0;
@@ -124,10 +107,73 @@ export default function GlobePremium({
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0.4, 3.2);
 
-    let renderer: THREE.WebGLRenderer;
+    // Try to construct the renderer with permissive options. We do NOT
+    // pre-check WebGL support — iframes/software renderers often trip false
+    // negatives. The only reliable signal is the actual constructor + a
+    // webglcontextcreationerror listener on the canvas.
+    const probeCanvas = document.createElement("canvas");
+    let creationError: string | null = null;
+    const onCreationError = (e: Event) => {
+      creationError = (e as WebGLContextEvent).statusMessage || "context creation failed";
+    };
+    probeCanvas.addEventListener("webglcontextcreationerror", onCreationError, false);
+
+    let renderer: THREE.WebGLRenderer | null = null;
     try {
       renderer = new THREE.WebGLRenderer({
-        antialias: !isMobile,
+        canvas: probeCanvas,
+        antialias: false, // enable after we know we're on hardware
+        alpha: true,
+        powerPreference: "default",
+        failIfMajorPerformanceCaveat: false,
+      });
+    } catch (err) {
+      console.warn("[GlobePremium] WebGLRenderer constructor threw", err, creationError);
+      probeCanvas.removeEventListener("webglcontextcreationerror", onCreationError);
+      setStatus("webgl-error");
+      return;
+    }
+    probeCanvas.removeEventListener("webglcontextcreationerror", onCreationError);
+
+    // Detect software rendering (SwiftShader / llvmpipe) and downgrade quality
+    let isSoftware = false;
+    try {
+      const gl = renderer.getContext();
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      const rendererName = dbg
+        ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || "")
+        : "";
+      isSoftware = /swiftshader|llvmpipe|software|angle.*basic/i.test(rendererName);
+    } catch {
+      /* ignore */
+    }
+    if (isSoftware) setSoftwareRender(true);
+
+    const segments = isMobile || isSoftware ? 40 : 72;
+    const useAntialias = !isMobile && !isSoftware;
+
+    // Re-init with antialias if hardware and desktop. Cheaper than
+    // reasoning about it upfront and keeps a single code path.
+    if (useAntialias) {
+      renderer.dispose();
+      renderer.forceContextLoss();
+      try {
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          powerPreference: "default",
+          failIfMajorPerformanceCaveat: false,
+        });
+      } catch {
+        // fall back to the software-safe renderer we already had
+        renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          alpha: true,
+          powerPreference: "default",
+          failIfMajorPerformanceCaveat: false,
+        });
+      }
+    }
         alpha: true,
         powerPreference: "high-performance",
       });
