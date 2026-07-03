@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, BookOpen } from "lucide-react";
-import { GlobeGlobal } from "../globe-global";
+import { GlobeLazy } from "../globe-lazy";
 
 export function Hero() {
   return (
@@ -87,7 +87,7 @@ export function Hero() {
                 "radial-gradient(120% 90% at 50% 0%, #0c2340 0%, #06101f 70%, #04080f 100%)",
             }}
           >
-            <GlobeGlobal />
+            <GlobeLazy />
           </div>
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Rede global simulada · 10 regiões · pulsos de tráfego em tempo real.
