@@ -257,10 +257,12 @@ export default function GlobePremium({
     ro.observe(container);
 
     // Render loop
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
     const animate = () => {
       if (disposed) return;
-      const dt = clock.getDelta();
+      const now = performance.now();
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
       if (clouds) clouds.rotation.y += dt * 0.02;
       controls.update();
       renderer.render(scene, camera);
