@@ -80,18 +80,6 @@ const atmosphereFragment = /* glsl */ `
   }
 `;
 
-function detectWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext("webgl2") || canvas.getContext("webgl"))
-    );
-  } catch {
-    return false;
-  }
-}
-
 export default function GlobePremium({
   markers = DEFAULT_MARKERS,
   className = "",
@@ -100,18 +88,13 @@ export default function GlobePremium({
   const [status, setStatus] = useState<"loading" | "ready" | "webgl-error" | "texture-error">(
     "loading",
   );
+  const [softwareRender, setSoftwareRender] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    if (!detectWebGL()) {
-      setStatus("webgl-error");
-      return;
-    }
-
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
-    const segments = isMobile ? 48 : 72;
 
     let disposed = false;
     let animationId = 0;
@@ -124,16 +107,72 @@ export default function GlobePremium({
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0.4, 3.2);
 
-    let renderer: THREE.WebGLRenderer;
+    // Try to construct the renderer with permissive options. We do NOT
+    // pre-check WebGL support — iframes/software renderers often trip false
+    // negatives. The only reliable signal is the actual constructor + a
+    // webglcontextcreationerror listener on the canvas.
+    const probeCanvas = document.createElement("canvas");
+    let creationError: string | null = null;
+    const onCreationError = (e: Event) => {
+      creationError = (e as WebGLContextEvent).statusMessage || "context creation failed";
+    };
+    probeCanvas.addEventListener("webglcontextcreationerror", onCreationError, false);
+
+    let renderer: THREE.WebGLRenderer | null = null;
     try {
       renderer = new THREE.WebGLRenderer({
-        antialias: !isMobile,
+        canvas: probeCanvas,
+        antialias: false, // enable after we know we're on hardware
         alpha: true,
-        powerPreference: "high-performance",
+        powerPreference: "default",
+        failIfMajorPerformanceCaveat: false,
       });
-    } catch {
+    } catch (err) {
+      console.warn("[GlobePremium] WebGLRenderer constructor threw", err, creationError);
+      probeCanvas.removeEventListener("webglcontextcreationerror", onCreationError);
       setStatus("webgl-error");
       return;
+    }
+    probeCanvas.removeEventListener("webglcontextcreationerror", onCreationError);
+
+    // Detect software rendering (SwiftShader / llvmpipe) and downgrade quality
+    let isSoftware = false;
+    try {
+      const gl = renderer.getContext();
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      const rendererName = dbg
+        ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || "")
+        : "";
+      isSoftware = /swiftshader|llvmpipe|software|angle.*basic/i.test(rendererName);
+    } catch {
+      /* ignore */
+    }
+    if (isSoftware) setSoftwareRender(true);
+
+    const segments = isMobile || isSoftware ? 40 : 72;
+    const useAntialias = !isMobile && !isSoftware;
+
+    // Re-init with antialias if hardware and desktop. Cheaper than
+    // reasoning about it upfront and keeps a single code path.
+    if (useAntialias) {
+      renderer.dispose();
+      renderer.forceContextLoss();
+      try {
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          powerPreference: "default",
+          failIfMajorPerformanceCaveat: false,
+        });
+      } catch {
+        // fall back to the software-safe renderer we already had
+        renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          alpha: true,
+          powerPreference: "default",
+          failIfMajorPerformanceCaveat: false,
+        });
+      }
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height, false);
@@ -408,11 +447,36 @@ export default function GlobePremium({
       )}
 
       {status === "webgl-error" && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-          <div className="max-w-[240px] text-sm text-white/70">
-            Seu navegador não suporta WebGL. Ative aceleração por hardware para
-            ver o globo 3D.
+        <>
+          <div className="absolute inset-[6%] overflow-hidden rounded-full">
+            <img
+              src="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+              alt="Mapa da Terra"
+              className="h-full w-full object-cover opacity-90"
+              style={{
+                filter: "brightness(0.95) saturate(1.05)",
+                maskImage:
+                  "radial-gradient(circle at 40% 35%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0.5) 100%)",
+              }}
+            />
           </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-[4%] rounded-full"
+            style={{
+              boxShadow:
+                "inset -42px -34px 78px rgba(0,0,0,0.55), 0 0 70px rgba(74,163,199,0.45)",
+            }}
+          />
+          <div className="pointer-events-none absolute inset-x-0 top-3 text-center text-[0.6rem] uppercase tracking-[0.2em] text-white/45">
+            Modo estático · ative aceleração de hardware para o globo 3D
+          </div>
+        </>
+      )}
+
+      {softwareRender && status === "ready" && (
+        <div className="pointer-events-none absolute inset-x-0 top-3 text-center text-[0.55rem] uppercase tracking-[0.2em] text-white/40">
+          Renderização por software
         </div>
       )}
 
