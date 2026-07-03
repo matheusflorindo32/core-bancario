@@ -447,11 +447,36 @@ export default function GlobePremium({
       )}
 
       {status === "webgl-error" && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-          <div className="max-w-[240px] text-sm text-white/70">
-            Seu navegador não suporta WebGL. Ative aceleração por hardware para
-            ver o globo 3D.
+        <>
+          <div className="absolute inset-[6%] overflow-hidden rounded-full">
+            <img
+              src="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+              alt="Mapa da Terra"
+              className="h-full w-full object-cover opacity-90"
+              style={{
+                filter: "brightness(0.95) saturate(1.05)",
+                maskImage:
+                  "radial-gradient(circle at 40% 35%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0.5) 100%)",
+              }}
+            />
           </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-[4%] rounded-full"
+            style={{
+              boxShadow:
+                "inset -42px -34px 78px rgba(0,0,0,0.55), 0 0 70px rgba(74,163,199,0.45)",
+            }}
+          />
+          <div className="pointer-events-none absolute inset-x-0 top-3 text-center text-[0.6rem] uppercase tracking-[0.2em] text-white/45">
+            Modo estático · ative aceleração de hardware para o globo 3D
+          </div>
+        </>
+      )}
+
+      {softwareRender && status === "ready" && (
+        <div className="pointer-events-none absolute inset-x-0 top-3 text-center text-[0.55rem] uppercase tracking-[0.2em] text-white/40">
+          Renderização por software
         </div>
       )}
 
